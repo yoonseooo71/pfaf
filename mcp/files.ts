@@ -51,6 +51,7 @@ function isBinary(filePath: string): boolean {
 
 function countLines(fullPath: string): number {
   const content = readFileSync(fullPath, 'utf8');
+  if (content === '') return 0;
   return content.split('\n').length;
 }
 

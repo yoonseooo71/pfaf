@@ -22,12 +22,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           ignore: { type: 'array', items: { type: 'string' }, description: 'Additional patterns to ignore' },
           prompt: { type: 'string', description: 'The user prompt to store in state (used by retry-failed)' },
           mode: { type: 'string', enum: ['sequential', 'parallel'], description: 'Execution mode' },
+          group_by: { type: 'string', enum: ['file', 'folder'], description: 'Group by file (default) or folder' },
         },
       },
     },
     {
       name: 'get_next_file',
-      description: 'Return the path of the next unprocessed file, or null if all files are done.',
+      description: 'Return the next unprocessed item. In file mode: returns a path string. In folder mode: returns { folder, files[] }. Returns null when all done.',
       inputSchema: {
         type: 'object',
         properties: {
