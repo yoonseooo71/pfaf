@@ -2,6 +2,7 @@ import fg from 'fast-glob';
 import ignore from 'ignore';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { execSync } from 'child_process';
 
 const BINARY_EXTENSIONS = new Set([
   '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
@@ -53,6 +54,15 @@ function countLines(fullPath: string): number {
   const content = readFileSync(fullPath, 'utf8');
   if (content === '') return 0;
   return content.split('\n').length;
+}
+
+export function getChangedFiles(cwd: string): Set<string> {
+  try {
+    const output = execSync('git diff --name-only HEAD', { cwd, encoding: 'utf8' });
+    return new Set(output.trim().split('\n').filter(Boolean));
+  } catch {
+    return new Set();
+  }
 }
 
 export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [] }: DiscoverFilesOptions): DiscoverFilesResult {

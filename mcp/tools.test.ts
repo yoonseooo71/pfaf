@@ -73,6 +73,23 @@ test('handleReset without force throws when in-progress', async () => {
   await expect(handleReset({ force: false }, dir)).rejects.toThrow('in-progress');
 });
 
+// changed-only tests
+
+test('handleListFiles with changed_only=true only includes git-changed files', async () => {
+  // init a temp git repo so git diff works
+  const { execSync: exec } = await import('child_process');
+  exec('git init && git config user.email "t@t.com" && git config user.name "T"', { cwd: dir });
+  touch('a.ts');
+  touch('b.ts');
+  exec('git add a.ts && git commit -m "init"', { cwd: dir });
+  // modify a.ts after commit so it shows in git diff HEAD
+  writeFileSync(join(dir, 'a.ts'), 'changed');
+
+  const result = await handleListFiles({ glob: '**/*.ts', changed_only: true }, dir);
+  expect(result.files).toContain('a.ts');
+  expect(result.files).not.toContain('b.ts');
+});
+
 // dry-run tests
 
 test('handleListFiles with dry_run=true does not initialize state', async () => {

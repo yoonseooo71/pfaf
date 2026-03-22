@@ -29,6 +29,10 @@ Ask: "파일 범위를 지정하세요 (기본: 모든 텍스트 파일, .gitign
 
 If user presses enter / provides nothing, use `**/*` as the default.
 
+Ask: "변경된 파일만 대상으로 할까요? (changed-only, git diff HEAD 기준) [y/n]"
+
+If y: pass `changed_only: true` to `list_files`.
+
 ### 2.5. Dry-run (optional)
 
 Ask: "실제 실행 전 대상 파일만 미리 볼까요? (dry-run) [y/n]"

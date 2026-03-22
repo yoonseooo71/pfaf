@@ -1,5 +1,5 @@
 import { join, dirname } from 'path';
-import { discoverFiles } from './files.js';
+import { discoverFiles, getChangedFiles } from './files.js';
 import { initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, resetState } from './state.js';
 import type { FileStatus } from './state.js';
 
@@ -10,6 +10,7 @@ interface ListFilesArgs {
   mode?: string;
   group_by?: 'file' | 'folder';
   dry_run?: boolean;
+  changed_only?: boolean;
 }
 
 interface ListFilesResult {
@@ -46,10 +47,17 @@ function statePath(cwd: string): string {
 }
 
 export async function handleListFiles(
-  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', dry_run = false }: ListFilesArgs,
+  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', dry_run = false, changed_only = false }: ListFilesArgs,
   cwd: string
 ): Promise<ListFilesResult> {
-  const { files, total } = discoverFiles({ cwd, glob, ignore });
+  let { files } = discoverFiles({ cwd, glob, ignore });
+
+  if (changed_only) {
+    const changed = getChangedFiles(cwd);
+    files = files.filter(f => changed.has(f.path));
+  }
+
+  const total = files.length;
 
   if (!dry_run) {
     let keys: string[];
