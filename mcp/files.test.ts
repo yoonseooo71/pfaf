@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 
-let dir;
+let dir: string;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'pfaf-files-'));
@@ -13,7 +13,7 @@ afterEach(() => {
   rmSync(dir, { recursive: true });
 });
 
-function touch(relPath, content = 'hello') {
+function touch(relPath: string, content: string | Buffer = 'hello'): void {
   const full = join(dir, relPath);
   mkdirSync(dirname(full), { recursive: true });
   writeFileSync(full, content);
@@ -58,5 +58,5 @@ test('flags files over 500 lines with warning', () => {
   touch('src/big.ts', bigContent);
   const result = discoverFiles({ cwd: dir, glob: '**/*.ts' });
   const big = result.files.find(f => f.path === 'src/big.ts');
-  expect(big.warning).toMatch(/500/);
+  expect(big!.warning).toMatch(/500/);
 });

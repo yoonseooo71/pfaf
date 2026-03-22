@@ -11,13 +11,30 @@ const BINARY_EXTENSIONS = new Set([
   '.lock', '.node',
 ]);
 
-const DEFAULT_IGNORE = [
+const DEFAULT_IGNORE: string[] = [
   'node_modules/**', '.git/**', 'dist/**', 'build/**',
   '**/*.lock', 'package-lock.json', '.pfaf-state.json',
 ];
 
-function loadGitignore(cwd) {
-  const ig = ignore();
+interface DiscoverFilesOptions {
+  cwd: string;
+  glob?: string;
+  ignore?: string[];
+}
+
+interface FileEntry {
+  path: string;
+  warning?: string;
+}
+
+interface DiscoverFilesResult {
+  files: FileEntry[];
+  total: number;
+}
+
+function loadGitignore(cwd: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ig = (ignore as any)();
   const gitignorePath = join(cwd, '.gitignore');
   if (existsSync(gitignorePath)) {
     ig.add(readFileSync(gitignorePath, 'utf8'));
@@ -25,19 +42,19 @@ function loadGitignore(cwd) {
   return ig;
 }
 
-function isBinary(filePath) {
+function isBinary(filePath: string): boolean {
   const dotIndex = filePath.lastIndexOf('.');
   if (dotIndex === -1) return false;
   const ext = filePath.slice(dotIndex).toLowerCase();
   return BINARY_EXTENSIONS.has(ext);
 }
 
-function countLines(fullPath) {
+function countLines(fullPath: string): number {
   const content = readFileSync(fullPath, 'utf8');
   return content.split('\n').length;
 }
 
-export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [] }) {
+export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [] }: DiscoverFilesOptions): DiscoverFilesResult {
   const ig = loadGitignore(cwd);
   const rawFiles = fg.sync(glob, {
     cwd,
@@ -47,13 +64,13 @@ export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [] 
     followSymbolicLinks: false,
   });
 
-  const files = [];
+  const files: FileEntry[] = [];
   for (const f of rawFiles) {
     if (ig.ignores(f)) continue;
     if (isBinary(f)) continue;
 
     const fullPath = join(cwd, f);
-    const entry = { path: f };
+    const entry: FileEntry = { path: f };
 
     try {
       const lines = countLines(fullPath);

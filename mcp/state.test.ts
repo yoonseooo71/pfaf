@@ -3,8 +3,8 @@ import { mkdtempSync, rmSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
-let dir;
-let statePath;
+let dir: string;
+let statePath: string;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'pfaf-'));

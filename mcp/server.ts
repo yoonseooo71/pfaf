@@ -3,7 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleReset } from './tools.js';
 
-const cwd = process.env.PFAF_CWD || process.cwd();
+const cwd: string = process.env.PFAF_CWD || process.cwd();
 
 const server = new Server(
   { name: 'pfaf', version: '1.0.0' },
@@ -66,9 +66,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: rawArgs } = request.params;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const args = (rawArgs ?? {}) as any;
   try {
-    let result;
+    let result: unknown;
     if (name === 'list_files') result = await handleListFiles(args, cwd);
     else if (name === 'get_next_file') result = await handleGetNextFile(args, cwd);
     else if (name === 'mark_done') result = await handleMarkDone(args, cwd);
@@ -78,7 +80,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   } catch (err) {
-    return { content: [{ type: 'text', text: `Error: ${err.message}` }], isError: true };
+    const error = err as Error;
+    return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
   }
 });
 

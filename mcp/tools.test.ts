@@ -3,7 +3,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleReset } from './tools.js';
 
-let dir;
+let dir: string;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'pfaf-tools-'));
@@ -13,7 +13,7 @@ afterEach(() => {
   rmSync(dir, { recursive: true });
 });
 
-function touch(relPath) {
+function touch(relPath: string): void {
   const full = join(dir, relPath);
   writeFileSync(full, 'content');
 }

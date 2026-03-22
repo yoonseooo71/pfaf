@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "dist",
+    "rootDir": "mcp",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "isolatedModules": true
+  },
+  "include": ["mcp/**/*.ts"],
+  "exclude": ["mcp/**/*.test.ts", "node_modules", "dist"]
+}
