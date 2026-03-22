@@ -29,6 +29,12 @@ Ask: "파일 범위를 지정하세요 (기본: 모든 텍스트 파일, .gitign
 
 If user presses enter / provides nothing, use `**/*` as the default.
 
+Ask: "그룹 단위를 선택하세요: [1] 파일별 (기본)  [2] 폴더별"
+
+- If 2: pass `group_by: 'folder'` to `list_files`
+  - In folder mode, `get_next_file()` returns `{ folder, files[] }` instead of a path string
+  - Use the folder-mode agent prompt template (see Step 5 below)
+
 Ask: "변경된 파일만 대상으로 할까요? (changed-only, git diff HEAD 기준) [y/n]"
 
 If y: pass `changed_only: true` to `list_files`.
@@ -83,6 +89,27 @@ Loop until `get_next_file()` returns null:
 Call `get_progress()` to read `batchSize` (default 5).
 Spawn up to `batchSize` agents simultaneously using the same prompt template above.
 Await all agents in the batch, mark each done/failed, then spawn the next batch.
+
+**Folder mode (group_by=folder):**
+`get_next_file()` returns `{ folder, files[] }` instead of a path string.
+Use this prompt template for each folder:
+```
+Apply the following task to the folder: [FOLDER]
+
+FILES IN THIS FOLDER:
+[FILE_LIST — one path per line]
+
+TASK: [USER_PROMPT]
+
+Instructions:
+1. Read ALL files in the folder using the Read tool
+2. Analyze them together with full cross-file context
+3. Apply the task — use Edit tool for changes, Write for new files
+4. If no changes are needed, say "no changes needed"
+5. Report: "done" or "failed: [reason]"
+```
+After completion, call `mark_done(folder, "done"|"failed")`
+Show progress: `[N/total] folder/... ✓` or `[N/total] folder/... ✗`
 
 ### 6. Summary
 
