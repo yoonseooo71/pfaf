@@ -1,0 +1,10 @@
+{
+  "name": "pfaf",
+  "version": "1.0.0",
+  "description": "Prompt For All Files — run any prompt on every file without skipping",
+  "author": "your-github-username",
+  "repository": "https://github.com/<user>/pfaf",
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}
