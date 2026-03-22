@@ -9,12 +9,14 @@ interface ListFilesArgs {
   prompt?: string;
   mode?: string;
   group_by?: 'file' | 'folder';
+  dry_run?: boolean;
 }
 
 interface ListFilesResult {
   files: string[];
   total: number;
   warnings: Array<{ path: string; warning: string }>;
+  dry_run?: true;
 }
 
 interface GetNextFileArgs {
@@ -44,34 +46,36 @@ function statePath(cwd: string): string {
 }
 
 export async function handleListFiles(
-  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file' }: ListFilesArgs,
+  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', dry_run = false }: ListFilesArgs,
   cwd: string
 ): Promise<ListFilesResult> {
   const { files, total } = discoverFiles({ cwd, glob, ignore });
 
-  let keys: string[];
-  let folderContents: Record<string, string[]> | undefined;
+  if (!dry_run) {
+    let keys: string[];
+    let folderContents: Record<string, string[]> | undefined;
 
-  if (group_by === 'folder') {
-    folderContents = {};
-    for (const f of files) {
-      const folder = dirname(f.path) || '.';
-      if (!folderContents[folder]) folderContents[folder] = [];
-      folderContents[folder].push(f.path);
+    if (group_by === 'folder') {
+      folderContents = {};
+      for (const f of files) {
+        const folder = dirname(f.path) || '.';
+        if (!folderContents[folder]) folderContents[folder] = [];
+        folderContents[folder].push(f.path);
+      }
+      keys = Object.keys(folderContents);
+    } else {
+      keys = files.map(f => f.path);
     }
-    keys = Object.keys(folderContents);
-  } else {
-    keys = files.map(f => f.path);
-  }
 
-  initState(statePath(cwd), {
-    prompt,
-    mode,
-    glob,
-    groupBy: group_by,
-    files: keys,
-    folderContents,
-  });
+    initState(statePath(cwd), {
+      prompt,
+      mode,
+      glob,
+      groupBy: group_by,
+      files: keys,
+      folderContents,
+    });
+  }
 
   return {
     files: files.map(f => f.path),
@@ -79,6 +83,7 @@ export async function handleListFiles(
     warnings: files
       .filter(f => f.warning)
       .map(f => ({ path: f.path, warning: f.warning as string })),
+    ...(dry_run ? { dry_run: true as const } : {}),
   };
 }
 

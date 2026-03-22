@@ -29,6 +29,12 @@ Ask: "파일 범위를 지정하세요 (기본: 모든 텍스트 파일, .gitign
 
 If user presses enter / provides nothing, use `**/*` as the default.
 
+### 2.5. Dry-run (optional)
+
+Ask: "실제 실행 전 대상 파일만 미리 볼까요? (dry-run) [y/n]"
+
+If y: call `list_files` with `dry_run: true`, display the file list, then stop (do not proceed to step 4).
+
 ### 3. Discover files
 
 Call MCP tool `list_files` with the glob. Show the result:

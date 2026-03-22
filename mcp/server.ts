@@ -23,6 +23,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           prompt: { type: 'string', description: 'The user prompt to store in state (used by retry-failed)' },
           mode: { type: 'string', enum: ['sequential', 'parallel'], description: 'Execution mode' },
           group_by: { type: 'string', enum: ['file', 'folder'], description: 'Group by file (default) or folder' },
+          dry_run: { type: 'boolean', description: 'If true, discover files without initializing state (preview only)' },
         },
       },
     },

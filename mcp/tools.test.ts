@@ -73,6 +73,27 @@ test('handleReset without force throws when in-progress', async () => {
   await expect(handleReset({ force: false }, dir)).rejects.toThrow('in-progress');
 });
 
+// dry-run tests
+
+test('handleListFiles with dry_run=true does not initialize state', async () => {
+  touch('a.ts');
+  touch('b.ts');
+  const result = await handleListFiles({ glob: '**/*.ts', dry_run: true }, dir);
+  expect(result.dry_run).toBe(true);
+  expect(result.total).toBe(2);
+  // state should not be created — get_next_file returns null
+  const next = await handleGetNextFile({}, dir);
+  expect(next).toBeNull();
+});
+
+test('handleListFiles with dry_run=false initializes state normally', async () => {
+  touch('a.ts');
+  const result = await handleListFiles({ glob: '**/*.ts', dry_run: false }, dir);
+  expect(result.dry_run).toBeUndefined();
+  const next = await handleGetNextFile({}, dir);
+  expect(next).toBe('a.ts');
+});
+
 // folder mode tests
 
 test('handleListFiles with group_by=folder groups files by directory', async () => {
