@@ -104,7 +104,13 @@ After the loop ends:
 - Otherwise → continue the loop from Step 5
 
 **`/pfaf status`**
-- Call `get_progress()` and display the result
+- Call `get_progress()` and display the result as:
+  ```
+  ████████░░░░░░░░ 8/16 (50%)  ✓ 7완료  ✗ 1실패  ⏳ 8대기
+  ```
+  - Bar: filled `█` for done+failed, empty `░` for pending, total width 16 chars
+  - Percentage: `Math.round((done + failed) / total * 100)`
+  - If total is 0: "진행 중인 작업이 없습니다."
 
 **`/pfaf reset`**
 - Ask: "현재 진행 상태가 초기화됩니다. 계속할까요? (y/n)"
