@@ -23,6 +23,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           prompt: { type: 'string', description: 'The user prompt to store in state (used by retry-failed)' },
           mode: { type: 'string', enum: ['sequential', 'parallel'], description: 'Execution mode' },
           group_by: { type: 'string', enum: ['file', 'folder'], description: 'Group by file (default) or folder' },
+          batch_size: { type: 'number', description: 'Number of agents to spawn in parallel mode (default: 5)' },
           dry_run: { type: 'boolean', description: 'If true, discover files without initializing state (preview only)' },
           changed_only: { type: 'boolean', description: 'If true, only include files changed since last git commit (git diff HEAD)' },
         },

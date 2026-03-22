@@ -9,6 +9,7 @@ interface ListFilesArgs {
   prompt?: string;
   mode?: string;
   group_by?: 'file' | 'folder';
+  batch_size?: number;
   dry_run?: boolean;
   changed_only?: boolean;
 }
@@ -47,7 +48,7 @@ function statePath(cwd: string): string {
 }
 
 export async function handleListFiles(
-  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', dry_run = false, changed_only = false }: ListFilesArgs,
+  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, dry_run = false, changed_only = false }: ListFilesArgs,
   cwd: string
 ): Promise<ListFilesResult> {
   let { files } = discoverFiles({ cwd, glob, ignore });
@@ -80,6 +81,7 @@ export async function handleListFiles(
       mode,
       glob,
       groupBy: group_by,
+      batchSize: batch_size,
       files: keys,
       folderContents,
     });

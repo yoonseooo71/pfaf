@@ -49,6 +49,10 @@ Call MCP tool `list_files` with the glob. Show the result:
 
 Ask: "실행 방식: [1] 순차 (안전, 결과 확인 가능)  [2] 병렬 (빠름)"
 
+If parallel: ask "배치 크기를 입력하세요 (기본: 5, 동시에 실행할 에이전트 수)"
+- Parse as integer; default to 5 if empty or invalid
+- Pass as `batch_size` to `list_files`
+
 Ask: "시작할까요? (y/n)"
 If n: stop.
 
@@ -76,8 +80,9 @@ Loop until `get_next_file()` returns null:
   6. Show progress: `[N/total] file_path... ✓` or `[N/total] file_path... ✗`
 
 **Parallel mode:**
-Spawn up to 5 agents simultaneously using the same prompt template above.
-Await all 5, mark each done/failed, then spawn the next batch.
+Call `get_progress()` to read `batchSize` (default 5).
+Spawn up to `batchSize` agents simultaneously using the same prompt template above.
+Await all agents in the batch, mark each done/failed, then spawn the next batch.
 
 ### 6. Summary
 

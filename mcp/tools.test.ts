@@ -73,6 +73,22 @@ test('handleReset without force throws when in-progress', async () => {
   await expect(handleReset({ force: false }, dir)).rejects.toThrow('in-progress');
 });
 
+// batch_size tests
+
+test('handleListFiles stores batch_size in state via getProgress', async () => {
+  touch('a.js');
+  await handleListFiles({ glob: '**/*.js', batch_size: 3 }, dir);
+  const progress = await handleGetProgress({}, dir);
+  expect(progress.batchSize).toBe(3);
+});
+
+test('handleListFiles defaults batch_size to 5', async () => {
+  touch('a.js');
+  await handleListFiles({ glob: '**/*.js' }, dir);
+  const progress = await handleGetProgress({}, dir);
+  expect(progress.batchSize).toBe(5);
+});
+
 // changed-only tests
 
 test('handleListFiles with changed_only=true only includes git-changed files', async () => {

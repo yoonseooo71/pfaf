@@ -8,6 +8,7 @@ interface RunState {
   mode: string;
   glob: string;
   groupBy: GroupBy;
+  batchSize: number;
   startedAt: string;
   files: Record<string, FileStatus>;
   folderContents?: Record<string, string[]>;
@@ -18,6 +19,7 @@ interface InitStateOptions {
   mode: string;
   glob: string;
   groupBy: GroupBy;
+  batchSize?: number;
   files: string[];
   folderContents?: Record<string, string[]>;
 }
@@ -27,6 +29,7 @@ interface Progress {
   pending: number;
   failed: number;
   total: number;
+  batchSize: number;
 }
 
 export function readState(statePath: string): RunState | null {
@@ -48,6 +51,7 @@ export function initState(statePath: string, opts: InitStateOptions): void {
     mode: opts.mode,
     glob: opts.glob,
     groupBy: opts.groupBy,
+    batchSize: opts.batchSize ?? 5,
     startedAt: new Date().toISOString(),
     files: Object.fromEntries(opts.files.map(f => [f, 'pending' as FileStatus])),
     ...(opts.folderContents ? { folderContents: opts.folderContents } : {}),
@@ -80,7 +84,7 @@ export function getFolderContents(statePath: string, folder: string): string[] {
 
 export function getProgress(statePath: string): Progress {
   const state = readState(statePath);
-  if (!state) return { done: 0, pending: 0, failed: 0, total: 0 };
+  if (!state) return { done: 0, pending: 0, failed: 0, total: 0, batchSize: 5 };
   const counts = Object.values(state.files).reduce<Record<FileStatus, number>>(
     (acc, s) => { acc[s] = (acc[s] || 0) + 1; return acc; },
     { pending: 0, done: 0, failed: 0 }
@@ -91,6 +95,7 @@ export function getProgress(statePath: string): Progress {
     pending: counts.pending,
     failed: counts.failed,
     total,
+    batchSize: state.batchSize,
   };
 }
 
