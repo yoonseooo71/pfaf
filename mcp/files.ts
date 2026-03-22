@@ -1,21 +1,11 @@
 import fg from 'fast-glob';
 import ignore from 'ignore';
+import type { Ignore } from 'ignore';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 
-const BINARY_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
-  '.woff', '.woff2', '.ttf', '.eot', '.otf',
-  '.pdf', '.zip', '.tar', '.gz', '.exe', '.bin',
-  '.mp3', '.mp4', '.wav', '.ogg', '.mov',
-  '.lock', '.node',
-]);
-
-const DEFAULT_IGNORE: string[] = [
-  'node_modules/**', '.git/**', 'dist/**', 'build/**',
-  '**/*.lock', 'package-lock.json', '.pfaf-state.json',
-];
+// --- Types ---
 
 interface DiscoverFilesOptions {
   cwd: string;
@@ -34,28 +24,22 @@ interface DiscoverFilesResult {
   total: number;
 }
 
-function loadGitignore(cwd: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ig = (ignore as any)();
-  const gitignorePath = join(cwd, '.gitignore');
-  if (existsSync(gitignorePath)) {
-    ig.add(readFileSync(gitignorePath, 'utf8'));
-  }
-  return ig;
-}
+// --- Constants ---
 
-function isBinary(filePath: string): boolean {
-  const dotIndex = filePath.lastIndexOf('.');
-  if (dotIndex === -1) return false;
-  const ext = filePath.slice(dotIndex).toLowerCase();
-  return BINARY_EXTENSIONS.has(ext);
-}
+const BINARY_EXTENSIONS = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico',
+  '.woff', '.woff2', '.ttf', '.eot', '.otf',
+  '.pdf', '.zip', '.tar', '.gz', '.exe', '.bin',
+  '.mp3', '.mp4', '.wav', '.ogg', '.mov',
+  '.lock', '.node',
+]);
 
-function countLines(fullPath: string): number {
-  const content = readFileSync(fullPath, 'utf8');
-  if (content === '') return 0;
-  return content.split('\n').length;
-}
+const DEFAULT_IGNORE: string[] = [
+  'node_modules/**', '.git/**', 'dist/**', 'build/**',
+  '**/*.lock', 'package-lock.json', '.pfaf-state.json',
+];
+
+// --- Public functions ---
 
 export function getChangedFiles(cwd: string): Set<string> {
   try {
@@ -105,4 +89,29 @@ export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [],
   }
 
   return { files, total: files.length };
+}
+
+// --- Helpers ---
+
+function loadGitignore(cwd: string): Ignore {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ig = (ignore as any)() as Ignore;
+  const gitignorePath = join(cwd, '.gitignore');
+  if (existsSync(gitignorePath)) {
+    ig.add(readFileSync(gitignorePath, 'utf8'));
+  }
+  return ig;
+}
+
+function isBinary(filePath: string): boolean {
+  const dotIndex = filePath.lastIndexOf('.');
+  if (dotIndex === -1) return false;
+  const ext = filePath.slice(dotIndex).toLowerCase();
+  return BINARY_EXTENSIONS.has(ext);
+}
+
+function countLines(fullPath: string): number {
+  const content = readFileSync(fullPath, 'utf8');
+  if (content === '') return 0;
+  return content.split('\n').length;
 }

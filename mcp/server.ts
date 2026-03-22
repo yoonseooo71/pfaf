@@ -3,6 +3,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleGetFailures, handleReset } from './tools.js';
 
+// --- Server setup (order must be preserved) ---
+
 const cwd: string = process.env.PFAF_CWD || process.cwd();
 
 const server = new Server(
@@ -78,24 +80,30 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: rawArgs } = request.params;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const args = (rawArgs ?? {}) as any;
   try {
-    let result: unknown;
-    if (name === 'list_files') result = await handleListFiles(args, cwd);
-    else if (name === 'get_next_file') result = await handleGetNextFile(args, cwd);
-    else if (name === 'mark_done') result = await handleMarkDone(args, cwd);
-    else if (name === 'get_failures') result = await handleGetFailures(args, cwd);
-    else if (name === 'get_progress') result = await handleGetProgress(args, cwd);
-    else if (name === 'reset') result = await handleReset(args, cwd);
-    else throw new Error(`Unknown tool: ${name}`);
-
+    const result = await dispatchTool(name, rawArgs ?? {}, cwd);
     return { content: [{ type: 'text', text: JSON.stringify(result) }] };
   } catch (err) {
-    const error = err as Error;
+    const error = err instanceof Error ? err : new Error(String(err));
     return { content: [{ type: 'text', text: `Error: ${error.message}` }], isError: true };
   }
 });
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
+
+// --- Helpers ---
+
+async function dispatchTool(name: string, args: Record<string, unknown>, cwd: string): Promise<unknown> {
+  // Cast through unknown to satisfy strict overlap checks — callers are responsible for providing valid args per tool schema
+  const a = args as unknown;
+  switch (name) {
+    case 'list_files':    return handleListFiles(a as Parameters<typeof handleListFiles>[0], cwd);
+    case 'get_next_file': return handleGetNextFile(a as Parameters<typeof handleGetNextFile>[0], cwd);
+    case 'mark_done':     return handleMarkDone(a as Parameters<typeof handleMarkDone>[0], cwd);
+    case 'get_failures':  return handleGetFailures({}, cwd);
+    case 'get_progress':  return handleGetProgress({}, cwd);
+    case 'reset':         return handleReset(a as Parameters<typeof handleReset>[0], cwd);
+    default:              throw new Error(`Unknown tool: ${name}`);
+  }
+}

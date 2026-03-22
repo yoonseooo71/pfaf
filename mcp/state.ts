@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 
+// --- Types ---
+
 export type FileStatus = 'pending' | 'done' | 'failed';
 export type GroupBy = 'file' | 'folder';
 
@@ -34,17 +36,12 @@ interface Progress {
   bar: string;
 }
 
-function renderBar(done: number, failed: number, total: number): string {
-  if (total === 0) return '';
-  const WIDTH = 20;
-  const processed = done + failed;
-  const filledDone = Math.round((done / total) * WIDTH);
-  const filledFailed = Math.round((failed / total) * WIDTH);
-  const filled = filledDone + filledFailed;
-  const pct = Math.round((processed / total) * 100);
-  const bar = '█'.repeat(filled) + '░'.repeat(Math.max(0, WIDTH - filled));
-  return `[${bar}] ${processed}/${total} (${pct}%)`;
+export interface FailureEntry {
+  file: string;
+  reason: string;
 }
+
+// --- Public functions ---
 
 export function readState(statePath: string): RunState | null {
   if (!existsSync(statePath)) return null;
@@ -82,11 +79,6 @@ export function markDone(statePath: string, file: string, status: FileStatus, re
     state.failures[file] = reason;
   }
   writeState(statePath, state);
-}
-
-export interface FailureEntry {
-  file: string;
-  reason: string;
 }
 
 export function getFailures(statePath: string): FailureEntry[] {
@@ -138,4 +130,18 @@ export function resetState(statePath: string, force: boolean = false): void {
     }
   }
   if (existsSync(statePath)) unlinkSync(statePath);
+}
+
+// --- Helpers ---
+
+function renderBar(done: number, failed: number, total: number): string {
+  if (total === 0) return '';
+  const WIDTH = 20;
+  const processed = done + failed;
+  const filledDone = Math.round((done / total) * WIDTH);
+  const filledFailed = Math.round((failed / total) * WIDTH);
+  const filled = filledDone + filledFailed;
+  const pct = Math.round((processed / total) * 100);
+  const bar = '█'.repeat(filled) + '░'.repeat(Math.max(0, WIDTH - filled));
+  return `[${bar}] ${processed}/${total} (${pct}%)`;
 }

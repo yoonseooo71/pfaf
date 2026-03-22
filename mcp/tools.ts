@@ -1,8 +1,9 @@
 import { join, dirname } from 'path';
 import { discoverFiles, getChangedFiles } from './files.js';
 import { initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, getFailures, resetState } from './state.js';
-import type { FailureEntry } from './state.js';
-import type { FileStatus } from './state.js';
+import type { FailureEntry, FileStatus } from './state.js';
+
+// --- Types ---
 
 interface ListFilesArgs {
   glob?: string;
@@ -46,9 +47,7 @@ interface ResetArgs {
   force?: boolean;
 }
 
-function statePath(cwd: string): string {
-  return join(cwd, '.pfaf-state.json');
-}
+// --- Public functions ---
 
 export async function handleListFiles(
   { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, dry_run = false, changed_only = false, include_only = [] }: ListFilesArgs,
@@ -123,14 +122,14 @@ export async function handleMarkDone(
 }
 
 export async function handleGetFailures(
-  _args: Record<string, unknown>,
+  _args: Record<string, never>,
   cwd: string
 ): Promise<FailureEntry[]> {
   return getFailures(statePath(cwd));
 }
 
 export async function handleGetProgress(
-  _args: Record<string, unknown>,
+  _args: Record<string, never>,
   cwd: string
 ): Promise<ReturnType<typeof getProgress>> {
   return getProgress(statePath(cwd));
@@ -142,4 +141,10 @@ export async function handleReset(
 ): Promise<OkResult> {
   resetState(statePath(cwd), force);
   return { ok: true };
+}
+
+// --- Helpers ---
+
+function statePath(cwd: string): string {
+  return join(cwd, '.pfaf-state.json');
 }
