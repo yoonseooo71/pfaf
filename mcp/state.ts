@@ -12,6 +12,7 @@ interface RunState {
   startedAt: string;
   files: Record<string, FileStatus>;
   folderContents?: Record<string, string[]>;
+  failures?: Record<string, string>;
 }
 
 interface InitStateOptions {
@@ -59,11 +60,26 @@ export function initState(statePath: string, opts: InitStateOptions): void {
   writeState(statePath, state);
 }
 
-export function markDone(statePath: string, file: string, status: FileStatus): void {
+export function markDone(statePath: string, file: string, status: FileStatus, reason?: string): void {
   const state = readState(statePath);
   if (!state) throw new Error('No active run. Call list_files first.');
   state.files[file] = status;
+  if (status === 'failed' && reason) {
+    state.failures = state.failures ?? {};
+    state.failures[file] = reason;
+  }
   writeState(statePath, state);
+}
+
+export interface FailureEntry {
+  file: string;
+  reason: string;
+}
+
+export function getFailures(statePath: string): FailureEntry[] {
+  const state = readState(statePath);
+  if (!state?.failures) return [];
+  return Object.entries(state.failures).map(([file, reason]) => ({ file, reason }));
 }
 
 export function getNextFile(statePath: string, retryFailed: boolean = false): string | null {

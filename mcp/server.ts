@@ -1,7 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleReset } from './tools.js';
+import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleGetFailures, handleReset } from './tools.js';
 
 const cwd: string = process.env.PFAF_CWD || process.cwd();
 
@@ -48,8 +48,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         properties: {
           file: { type: 'string' },
           status: { type: 'string', enum: ['done', 'failed'] },
+          reason: { type: 'string', description: 'Failure reason (stored when status=failed)' },
         },
       },
+    },
+    {
+      name: 'get_failures',
+      description: 'Return list of failed files with their failure reasons.',
+      inputSchema: { type: 'object', properties: {} },
     },
     {
       name: 'get_progress',
@@ -78,6 +84,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === 'list_files') result = await handleListFiles(args, cwd);
     else if (name === 'get_next_file') result = await handleGetNextFile(args, cwd);
     else if (name === 'mark_done') result = await handleMarkDone(args, cwd);
+    else if (name === 'get_failures') result = await handleGetFailures(args, cwd);
     else if (name === 'get_progress') result = await handleGetProgress(args, cwd);
     else if (name === 'reset') result = await handleReset(args, cwd);
     else throw new Error(`Unknown tool: ${name}`);

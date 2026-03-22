@@ -1,6 +1,7 @@
 import { join, dirname } from 'path';
 import { discoverFiles, getChangedFiles } from './files.js';
-import { initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, resetState } from './state.js';
+import { initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, getFailures, resetState } from './state.js';
+import type { FailureEntry } from './state.js';
 import type { FileStatus } from './state.js';
 
 interface ListFilesArgs {
@@ -33,6 +34,7 @@ export interface FolderEntry {
 interface MarkDoneArgs {
   file: string;
   status: FileStatus;
+  reason?: string;
 }
 
 interface OkResult {
@@ -112,11 +114,18 @@ export async function handleGetNextFile(
 }
 
 export async function handleMarkDone(
-  { file, status }: MarkDoneArgs,
+  { file, status, reason }: MarkDoneArgs,
   cwd: string
 ): Promise<OkResult> {
-  markDone(statePath(cwd), file, status);
+  markDone(statePath(cwd), file, status, reason);
   return { ok: true };
+}
+
+export async function handleGetFailures(
+  _args: Record<string, unknown>,
+  cwd: string
+): Promise<FailureEntry[]> {
+  return getFailures(statePath(cwd));
 }
 
 export async function handleGetProgress(

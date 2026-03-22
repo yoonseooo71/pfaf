@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleReset, FolderEntry } from './tools.js';
+import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleGetFailures, handleReset, FolderEntry } from './tools.js';
 
 let dir: string;
 
@@ -71,6 +71,35 @@ test('handleReset without force throws when in-progress', async () => {
   await handleListFiles({ glob: '**/*.js' }, dir);
   await handleMarkDone({ file: 'a.js', status: 'done' }, dir);
   await expect(handleReset({ force: false }, dir)).rejects.toThrow('in-progress');
+});
+
+// get_failures tests
+
+test('handleGetFailures returns failure entries with reasons', async () => {
+  touch('a.ts');
+  touch('b.ts');
+  await handleListFiles({ glob: '**/*.ts' }, dir);
+  await handleMarkDone({ file: 'a.ts', status: 'failed', reason: 'syntax error on line 3' }, dir);
+  await handleMarkDone({ file: 'b.ts', status: 'done' }, dir);
+  const failures = await handleGetFailures({}, dir);
+  expect(failures).toHaveLength(1);
+  expect(failures[0]).toEqual({ file: 'a.ts', reason: 'syntax error on line 3' });
+});
+
+test('handleGetFailures returns empty array when no failures', async () => {
+  touch('a.ts');
+  await handleListFiles({ glob: '**/*.ts' }, dir);
+  await handleMarkDone({ file: 'a.ts', status: 'done' }, dir);
+  const failures = await handleGetFailures({}, dir);
+  expect(failures).toEqual([]);
+});
+
+test('handleMarkDone failed without reason does not store reason', async () => {
+  touch('a.ts');
+  await handleListFiles({ glob: '**/*.ts' }, dir);
+  await handleMarkDone({ file: 'a.ts', status: 'failed' }, dir);
+  const failures = await handleGetFailures({}, dir);
+  expect(failures).toEqual([]);
 });
 
 // batch_size tests
