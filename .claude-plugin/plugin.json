@@ -2,7 +2,10 @@
   "name": "pfaf",
   "version": "1.0.0",
   "description": "Prompt For All Files — run any prompt on every file without skipping",
-  "author": "yoonseooo71",
+  "author": {
+    "name": "yoonseooo71",
+    "email": "yoonseooo71@github.com"
+  },
   "repository": "https://github.com/yoonseooo71/pfaf",
   "license": "MIT",
   "skills": "./skills/",
