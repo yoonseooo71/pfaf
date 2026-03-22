@@ -1,7 +1,7 @@
 {
   "name": "pfaf",
   "description": "Run any prompt on every file in your project without skipping",
-  "owner": { "name": "your-name", "email": "you@example.com" },
+  "owner": { "name": "yoonseooo71", "email": "yoonseooo71@github.com" },
   "plugins": [{
     "name": "pfaf",
     "description": "Prompt For All Files — guarantees no file is skipped",

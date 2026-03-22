@@ -9,7 +9,7 @@ When you ask Claude to apply a change across an entire project, it tends to skip
 ## Installation
 
 ```bash
-claude plugin marketplace add https://github.com/<user>/pfaf.git
+claude plugin marketplace add https://github.com/yoonseooo71/pfaf.git
 claude plugin install pfaf@pfaf
 ```
 
