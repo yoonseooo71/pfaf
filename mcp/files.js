@@ -26,7 +26,9 @@ function loadGitignore(cwd) {
 }
 
 function isBinary(filePath) {
-  const ext = filePath.slice(filePath.lastIndexOf('.')).toLowerCase();
+  const dotIndex = filePath.lastIndexOf('.');
+  if (dotIndex === -1) return false;
+  const ext = filePath.slice(dotIndex).toLowerCase();
   return BINARY_EXTENSIONS.has(ext);
 }
 

@@ -38,11 +38,11 @@ test('excludes node_modules by default', () => {
 });
 
 test('respects .gitignore', () => {
-  writeFileSync(join(dir, '.gitignore'), 'dist/\n');
-  touch('dist/bundle.js');
+  writeFileSync(join(dir, '.gitignore'), 'generated/\n');
+  touch('generated/output.js');
   touch('src/app.js');
   const result = discoverFiles({ cwd: dir, glob: '**/*.js' });
-  expect(result.files.map(f => f.path)).not.toContain('dist/bundle.js');
+  expect(result.files.map(f => f.path)).not.toContain('generated/output.js');
   expect(result.files.map(f => f.path)).toContain('src/app.js');
 });
 
