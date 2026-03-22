@@ -147,3 +147,21 @@ After the loop ends:
 **`/pfaf retry-failed`**
 - Loop calling `get_next_file(retry_failed=true)` until null
 - Process each with the same subagent template, using the stored prompt from state
+
+**`/pfaf ci <prompt>`**
+Non-interactive mode for automated environments. Skips all questions and runs with defaults:
+- glob: `**/*`
+- group_by: `file`
+- mode: `sequential`
+- changed_only: `false`
+- dry_run: `false`
+
+Execution:
+1. Call `list_files` with `{ prompt: <prompt>, mode: 'sequential' }`
+2. If 0 files: exit with "No files found."
+3. Run in sequential mode immediately (no confirmations)
+4. On completion print summary line:
+   ```
+   pfaf ci done — ✓ X  ✗ Y  total Z
+   ```
+5. If any failures: call `get_failures()` and print each `file: reason`
