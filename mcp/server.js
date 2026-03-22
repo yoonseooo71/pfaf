@@ -3,7 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleReset } from './tools.js';
 
-const cwd = process.cwd();
+const cwd = process.env.PFAF_CWD || process.cwd();
 
 const server = new Server(
   { name: 'pfaf', version: '1.0.0' },

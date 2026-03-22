@@ -1,6 +1,6 @@
 import { discoverFiles } from './files.js';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 
 let dir;
@@ -15,7 +15,7 @@ afterEach(() => {
 
 function touch(relPath, content = 'hello') {
   const full = join(dir, relPath);
-  mkdirSync(full.replace(/\/[^/]+$/, ''), { recursive: true });
+  mkdirSync(dirname(full), { recursive: true });
   writeFileSync(full, content);
 }
 

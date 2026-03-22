@@ -2,7 +2,11 @@ import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 
 export function readState(statePath) {
   if (!existsSync(statePath)) return null;
-  return JSON.parse(readFileSync(statePath, 'utf8'));
+  try {
+    return JSON.parse(readFileSync(statePath, 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 export function writeState(statePath, state) {
@@ -22,6 +26,7 @@ export function initState(statePath, { prompt, mode, glob, files }) {
 
 export function markDone(statePath, file, status) {
   const state = readState(statePath);
+  if (!state) throw new Error('No active run. Call list_files first.');
   state.files[file] = status;
   writeState(statePath, state);
 }
