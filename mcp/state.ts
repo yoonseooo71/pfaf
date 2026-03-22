@@ -31,6 +31,19 @@ interface Progress {
   failed: number;
   total: number;
   batchSize: number;
+  bar: string;
+}
+
+function renderBar(done: number, failed: number, total: number): string {
+  if (total === 0) return '';
+  const WIDTH = 20;
+  const processed = done + failed;
+  const filledDone = Math.round((done / total) * WIDTH);
+  const filledFailed = Math.round((failed / total) * WIDTH);
+  const filled = filledDone + filledFailed;
+  const pct = Math.round((processed / total) * 100);
+  const bar = '█'.repeat(filled) + '░'.repeat(Math.max(0, WIDTH - filled));
+  return `[${bar}] ${processed}/${total} (${pct}%)`;
 }
 
 export function readState(statePath: string): RunState | null {
@@ -100,7 +113,7 @@ export function getFolderContents(statePath: string, folder: string): string[] {
 
 export function getProgress(statePath: string): Progress {
   const state = readState(statePath);
-  if (!state) return { done: 0, pending: 0, failed: 0, total: 0, batchSize: 5 };
+  if (!state) return { done: 0, pending: 0, failed: 0, total: 0, batchSize: 5, bar: '' };
   const counts = Object.values(state.files).reduce<Record<FileStatus, number>>(
     (acc, s) => { acc[s] = (acc[s] || 0) + 1; return acc; },
     { pending: 0, done: 0, failed: 0 }
@@ -112,6 +125,7 @@ export function getProgress(statePath: string): Progress {
     failed: counts.failed,
     total,
     batchSize: state.batchSize,
+    bar: renderBar(counts.done, counts.failed, total),
   };
 }
 

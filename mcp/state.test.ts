@@ -46,7 +46,12 @@ test('getProgress returns correct counts', () => {
   markDone(statePath, 'a.js', 'done');
   markDone(statePath, 'b.js', 'failed');
   const p = getProgress(statePath);
-  expect(p).toEqual({ done: 1, pending: 1, failed: 1, total: 3, batchSize: 5 });
+  expect(p.done).toBe(1);
+  expect(p.pending).toBe(1);
+  expect(p.failed).toBe(1);
+  expect(p.total).toBe(3);
+  expect(p.batchSize).toBe(5);
+  expect(p.bar).toMatch(/\[█+░*\] \d+\/\d+ \(\d+%\)/);
 });
 
 test('resetState with force=true clears the file', () => {
