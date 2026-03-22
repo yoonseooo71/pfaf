@@ -1,7 +1,7 @@
 # PFAF (Prompt For All Files) — Design Spec
 
 **Date:** 2026-03-22
-**Status:** Revised v3
+**Status:** Implemented v3
 
 ---
 
@@ -41,11 +41,15 @@ project-refactoring-harness/
 │   └── marketplace.json    # Marketplace metadata (required for claude plugin install)
 ├── .mcp.json               # MCP server configuration (project root, not inside .claude-plugin/)
 ├── mcp/
-│   └── server.js           # MCP server (Node.js, uses @modelcontextprotocol/sdk)
+│   ├── server.ts           # MCP server (Node.js, uses @modelcontextprotocol/sdk)
+│   ├── tools.ts            # Tool handlers (list_files, get_next_file, mark_done, etc.)
+│   ├── state.ts            # State management (.pfaf-state.json I/O)
+│   └── files.ts            # File discovery and filtering
 ├── skills/
 │   └── pfaf/
 │       └── SKILL.md        # /pfaf slash command skill (with YAML frontmatter + body)
-└── README.md
+├── README.md               # User documentation
+└── package.json            # TypeScript, Jest, fast-glob, ignore
 ```
 
 **Data flow:**
@@ -56,14 +60,24 @@ User: /pfaf "remove all console.log"
   ▼
 [Skill: skills/pfaf/SKILL.md]  — defines UX and orchestration
   │
-  ├── MCP: list_files(glob, ignore) → initializes .pfaf-state.json with all target files
+  ├── Ask: glob pattern, group_by (file|folder), changed_only, dry_run
+  ├── MCP: list_files(glob, group_by, ...) → initializes .pfaf-state.json
   ├── Show preview: "23 files found. Sequential or parallel?"
   │
   └── Loop until get_next_file() → null:
-        file = get_next_file()
-        Spawn subagent: "Apply [prompt] to [file]. Read file, apply changes, save."
-        ← subagent completes with isolated context →
-        mark_done(file, status)
+
+      File Mode (group_by=file):
+        item = get_next_file() → "src/app.ts"
+        Spawn subagent: "Apply [prompt] to file [src/app.ts]"
+        ← subagent reads file, edits, saves →
+        mark_done("src/app.ts", status)
+        show_progress()
+
+      Folder Mode (group_by=folder):
+        item = get_next_file() → { folder: "src", files: ["src/app.ts", "src/utils.ts"] }
+        Spawn subagent: "Apply [prompt] to folder [src] with files [list]"
+        ← subagent reads all files in folder, analyzes cross-file context, edits, saves →
+        mark_done("src", status)
         show_progress()
 ```
 
@@ -98,11 +112,12 @@ Each subagent:
 
 | Tool | Input | Output | Role |
 |---|---|---|---|
-| `list_files` | `glob: string`, `ignore?: string[]` | `{ files: string[], total: number }` | Discover files and initialize `.pfaf-state.json` |
-| `get_next_file` | `retry_failed?: boolean` | `string \| null` | Return next pending file (or next failed file when retry_failed=true) |
-| `mark_done` | `file: string`, `status: "done" \| "failed"` | — | Record completion or failure |
-| `get_progress` | — | `{ done: number, pending: number, failed: number, total: number }` | Return current progress |
-| `reset` | `force?: boolean` | — | Clear `.pfaf-state.json` (requires force=true if in-progress) |
+| `list_files` | `glob?, ignore?, prompt?, mode?, group_by?, batch_size?, dry_run?, changed_only?, include_only?` | `{ files: string[], total: number, warnings: [], dry_run?: true }` | Discover files and initialize `.pfaf-state.json` |
+| `get_next_file` | `retry_failed?: boolean` | `string \| FolderEntry \| null` | Return next pending file/folder (or next failed when retry_failed=true) |
+| `mark_done` | `file: string, status: "done"\|"failed", reason?: string` | `{ ok: true }` | Record completion/failure with optional reason |
+| `get_failures` | — | `{ file: string, reason: string }[]` | Return all failed files with failure reasons |
+| `get_progress` | — | `{ done, pending, failed, total, batchSize, bar }` | Return progress with visual bar |
+| `reset` | `force?: boolean` | `{ ok: true }` | Clear `.pfaf-state.json` (requires force=true if in-progress) |
 
 **Default file filtering (built into `list_files`):**
 - Respects `.gitignore` automatically
@@ -117,12 +132,20 @@ Each subagent:
   "prompt": "remove all console.log",
   "mode": "sequential",
   "glob": "**/*.ts",
+  "groupBy": "file",
+  "batchSize": 5,
   "startedAt": "2026-03-22T10:00:00Z",
   "files": {
     "src/app.ts": "done",
     "src/utils.ts": "done",
     "src/index.ts": "pending",
     "src/types.ts": "pending"
+  },
+  "folderContents": {
+    "src": ["src/app.ts", "src/utils.ts", "src/index.ts", "src/types.ts"]
+  },
+  "failures": {
+    "src/broken.ts": "SyntaxError on line 42"
   }
 }
 ```
@@ -137,6 +160,7 @@ Each subagent:
 ```bash
 /pfaf "각 파일의 console.log를 모두 제거해줘"
 ```
+Skips the prompt-entry step; proceeds to file glob, group-by, changed-only, dry-run, mode, and confirmation.
 
 ### Mode B — Interactive (no arguments)
 ```bash
@@ -145,6 +169,12 @@ Each subagent:
   → (사용자 입력)
 > 파일 범위를 지정하세요 (기본: 모든 텍스트 파일, .gitignore 적용 — 엔터로 건너뜀)
   → **/*.ts
+> 그룹 단위를 선택하세요: [1] 파일별 (기본)  [2] 폴더별
+  → 1
+> 변경된 파일만 대상으로 할까요? (y/n)
+  → n
+> 실제 실행 전 대상 파일만 미리 볼까요? (dry-run) (y/n)
+  → n
 > 실행 방식: [1] 순차 (안전, 결과 확인 가능)  [2] 병렬 (빠름)
   → 1
 > 총 23개 파일 발견. 시작할까요? (y/n)
@@ -155,27 +185,40 @@ Each subagent:
 ```
 
 ### Subcommands
-```bash
-/pfaf resume          # Resume interrupted run from last processed file
-/pfaf status          # Show current progress summary
-/pfaf reset           # Clear state (prompts confirmation if in-progress)
-/pfaf retry-failed    # Re-run only files marked as failed
-```
+
+| Command | Purpose |
+|---------|---------|
+| `/pfaf resume` | Resume interrupted run from the last pending file |
+| `/pfaf status` | Show current progress with bar: `[████░░░░] 5/10 (50%)` |
+| `/pfaf reset` | Clear state (prompts confirmation if in-progress) |
+| `/pfaf retry-failed` | Re-run only files marked as failed |
+| `/pfaf ci <prompt>` | Non-interactive CI mode (defaults: sequential, **/* glob, no confirmation) |
 
 ---
 
 ## 7. Execution Modes
 
+### File Mode (default)
+- Each file processed individually
+- `get_next_file()` returns a path string: `"src/app.ts"`
+- Subagent prompt: "Apply task to file at [path]"
+
+### Folder Mode
+- Files grouped by directory
+- `get_next_file()` returns `{ folder: "src", files: ["src/app.ts", "src/utils.ts"] }`
+- Subagent receives all files in folder together, enabling cross-file context
+- Useful for refactors that require understanding relationships between files in a directory
+
 ### Sequential Mode
-- One subagent spawned per file, one at a time
+- One subagent spawned per file/folder, one at a time
 - Orchestrator waits for completion before spawning next
-- Progress shown after each file: `[N/total] filepath... ✓`
-- Safer: user can inspect results file by file
+- Progress shown after each: `[N/total] filepath... ✓`
+- Safer: user can inspect results step-by-step
 
 ### Parallel Mode
 - Multiple subagents spawned simultaneously (default batch: 5 at a time)
 - `get_next_file()` calls are serialized by the MCP server (single-threaded Node.js event loop prevents race conditions)
-- `mark_done()` is atomic — no two subagents can mark the same file
+- `mark_done()` is atomic — no two subagents can mark the same item
 - Faster for large projects with independent files
 
 ---
@@ -299,9 +342,26 @@ Subcommands:
 
 ---
 
-## 11. Out of Scope (v1.0)
+## 11. Implemented Features (v3)
 
-- Dry-run mode (preview changes without applying)
+- Sequential and parallel execution modes
+- File-by-file processing via subagents
+- Folder-mode grouping for cross-file refactors
+- Dry-run mode (preview files without state init)
+- Progress tracking with visual bar
+- Resume capability after interruption
+- Retry-failed to re-run only failed files
+- Failure tracking with detailed reasons
+- `changed_only` filter (git diff HEAD)
+- `include_only` whitelist glob filter
+- CI/CD mode (`/pfaf ci <prompt>`)
+- Automatic binary file exclusion
+- Large file warnings (>500 lines)
+- `.gitignore` respect
+- Parallel batch sizing
+
+## 12. Out of Scope (v1.0)
+
 - File dependency ordering
 - Rollback / undo individual file changes
 - GUI or web dashboard
