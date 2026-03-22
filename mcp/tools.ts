@@ -13,6 +13,7 @@ interface ListFilesArgs {
   batch_size?: number;
   dry_run?: boolean;
   changed_only?: boolean;
+  include_only?: string[];
 }
 
 interface ListFilesResult {
@@ -50,10 +51,10 @@ function statePath(cwd: string): string {
 }
 
 export async function handleListFiles(
-  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, dry_run = false, changed_only = false }: ListFilesArgs,
+  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, dry_run = false, changed_only = false, include_only = [] }: ListFilesArgs,
   cwd: string
 ): Promise<ListFilesResult> {
-  let { files } = discoverFiles({ cwd, glob, ignore });
+  let { files } = discoverFiles({ cwd, glob, ignore, includeOnly: include_only });
 
   if (changed_only) {
     const changed = getChangedFiles(cwd);

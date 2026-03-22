@@ -73,6 +73,25 @@ test('handleReset without force throws when in-progress', async () => {
   await expect(handleReset({ force: false }, dir)).rejects.toThrow('in-progress');
 });
 
+// include_only tests
+
+test('handleListFiles with include_only restricts to matching files', async () => {
+  touch('a.ts');
+  touch('b.ts');
+  touch('c.js');
+  const result = await handleListFiles({ glob: '**/*', include_only: ['**/*.ts'] }, dir);
+  expect(result.files).toContain('a.ts');
+  expect(result.files).toContain('b.ts');
+  expect(result.files).not.toContain('c.js');
+});
+
+test('handleListFiles with empty include_only returns all files', async () => {
+  touch('a.ts');
+  touch('b.js');
+  const result = await handleListFiles({ glob: '**/*', include_only: [] }, dir);
+  expect(result.total).toBe(2);
+});
+
 // get_failures tests
 
 test('handleGetFailures returns failure entries with reasons', async () => {

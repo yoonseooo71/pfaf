@@ -21,6 +21,7 @@ interface DiscoverFilesOptions {
   cwd: string;
   glob?: string;
   ignore?: string[];
+  includeOnly?: string[];
 }
 
 interface FileEntry {
@@ -65,15 +66,22 @@ export function getChangedFiles(cwd: string): Set<string> {
   }
 }
 
-export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [] }: DiscoverFilesOptions): DiscoverFilesResult {
+export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [], includeOnly = [] }: DiscoverFilesOptions): DiscoverFilesResult {
   const ig = loadGitignore(cwd);
-  const rawFiles = fg.sync(glob, {
+  let rawFiles = fg.sync(glob, {
     cwd,
     ignore: [...DEFAULT_IGNORE, ...ignorePatterns],
     dot: false,
     onlyFiles: true,
     followSymbolicLinks: false,
   });
+
+  if (includeOnly.length > 0) {
+    const allowedSet = new Set(
+      includeOnly.flatMap(p => fg.sync(p, { cwd, dot: false, onlyFiles: true }))
+    );
+    rawFiles = rawFiles.filter(f => allowedSet.has(f));
+  }
 
   const files: FileEntry[] = [];
   for (const f of rawFiles) {

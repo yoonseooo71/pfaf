@@ -26,6 +26,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           batch_size: { type: 'number', description: 'Number of agents to spawn in parallel mode (default: 5)' },
           dry_run: { type: 'boolean', description: 'If true, discover files without initializing state (preview only)' },
           changed_only: { type: 'boolean', description: 'If true, only include files changed since last git commit (git diff HEAD)' },
+          include_only: { type: 'array', items: { type: 'string' }, description: 'Whitelist glob patterns — only files matching at least one pattern are included' },
         },
       },
     },
