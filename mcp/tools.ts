@@ -1,6 +1,6 @@
 import { join, dirname } from 'path';
 import { discoverFiles, getChangedFiles } from './files.js';
-import { initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, getFailures, resetState } from './state.js';
+import { readState, initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, getFailures, resetState } from './state.js';
 import type { FailureEntry, FileStatus } from './state.js';
 
 // --- Types ---
@@ -63,6 +63,14 @@ export async function handleListFiles(
   const total = files.length;
 
   if (!dry_run) {
+    const existing = readState(statePath(cwd));
+    if (existing) {
+      const hasPending = Object.values(existing.files).some(s => s === 'pending');
+      if (hasPending) {
+        throw new Error('A run is already in progress. Call reset(force=true) before starting a new run.');
+      }
+    }
+
     let keys: string[];
     let folderContents: Record<string, string[]> | undefined;
 
