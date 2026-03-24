@@ -12,6 +12,7 @@ interface ListFilesArgs {
   mode?: string;
   group_by?: 'file' | 'folder';
   batch_size?: number;
+  model?: string;
   dry_run?: boolean;
   changed_only?: boolean;
   include_only?: string[];
@@ -50,7 +51,7 @@ interface ResetArgs {
 // --- Public functions ---
 
 export async function handleListFiles(
-  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, dry_run = false, changed_only = false, include_only = [] }: ListFilesArgs,
+  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, model, dry_run = false, changed_only = false, include_only = [] }: ListFilesArgs,
   cwd: string
 ): Promise<ListFilesResult> {
   let { files } = discoverFiles({ cwd, glob, ignore, includeOnly: include_only });
@@ -68,6 +69,9 @@ export async function handleListFiles(
       const hasPending = Object.values(existing.files).some(s => s === 'pending');
       if (hasPending) {
         throw new Error('A run is already in progress. Call reset(force=true) before starting a new run.');
+      }
+      if (existing.model && model && existing.model !== model) {
+        throw new Error(`Model is locked to "${existing.model}" for this run. Use reset(force=true) to start a new run.`);
       }
     }
 
@@ -92,6 +96,7 @@ export async function handleListFiles(
       glob,
       groupBy: group_by,
       batchSize: batch_size,
+      model,
       files: keys,
       folderContents,
     });

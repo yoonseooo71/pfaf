@@ -11,6 +11,7 @@ interface RunState {
   glob: string;
   groupBy: GroupBy;
   batchSize: number;
+  model?: string;
   startedAt: string;
   files: Record<string, FileStatus>;
   folderContents?: Record<string, string[]>;
@@ -23,6 +24,7 @@ interface InitStateOptions {
   glob: string;
   groupBy: GroupBy;
   batchSize?: number;
+  model?: string;
   files: string[];
   folderContents?: Record<string, string[]>;
 }
@@ -33,6 +35,7 @@ interface Progress {
   failed: number;
   total: number;
   batchSize: number;
+  model?: string;
   bar: string;
 }
 
@@ -63,6 +66,7 @@ export function initState(statePath: string, opts: InitStateOptions): void {
     glob: opts.glob,
     groupBy: opts.groupBy,
     batchSize: opts.batchSize ?? 5,
+    ...(opts.model ? { model: opts.model } : {}),
     startedAt: new Date().toISOString(),
     files: Object.fromEntries(opts.files.map(f => [f, 'pending' as FileStatus])),
     ...(opts.folderContents ? { folderContents: opts.folderContents } : {}),
@@ -117,6 +121,7 @@ export function getProgress(statePath: string): Progress {
     failed: counts.failed,
     total,
     batchSize: state.batchSize,
+    ...(state.model ? { model: state.model } : {}),
     bar: renderBar(counts.done, counts.failed, total),
   };
 }

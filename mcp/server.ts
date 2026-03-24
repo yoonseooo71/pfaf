@@ -27,6 +27,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           mode: { type: 'string', enum: ['sequential', 'parallel'], description: 'Execution mode' },
           group_by: { type: 'string', enum: ['file', 'folder'], description: 'Group by file (default) or folder' },
           batch_size: { type: 'number', description: 'Number of agents to spawn in parallel mode (default: 5)' },
+          model: { type: 'string', enum: ['sonnet', 'opus', 'haiku'], description: 'Claude model to use for file-processing subagents. Locked once run starts.' },
           dry_run: { type: 'boolean', description: 'If true, discover files without initializing state (preview only)' },
           changed_only: { type: 'boolean', description: 'If true, only include files changed since last git commit (git diff HEAD)' },
           include_only: { type: 'array', items: { type: 'string' }, description: 'Whitelist glob patterns — only files matching at least one pattern are included' },
