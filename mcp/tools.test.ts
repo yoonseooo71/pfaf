@@ -220,3 +220,36 @@ test('handleGetNextFile in folder mode skips done folders', async () => {
   const second = await handleGetNextFile({}, dir) as FolderEntry;
   expect(second.folder).not.toBe(first.folder);
 });
+
+// model tests
+
+test('handleListFiles stores model in state', async () => {
+  touch('a.js');
+  await handleListFiles({ glob: '**/*.js', model: 'haiku' }, dir);
+  const p = await handleGetProgress({}, dir);
+  expect(p.model).toBe('haiku');
+});
+
+test('handleListFiles without model leaves model undefined in state', async () => {
+  touch('a.js');
+  await handleListFiles({ glob: '**/*.js' }, dir);
+  const p = await handleGetProgress({}, dir);
+  expect(p.model).toBeUndefined();
+});
+
+test('handleListFiles rejects model change when run already has a locked model', async () => {
+  touch('a.js');
+  await handleListFiles({ glob: '**/*.js', model: 'sonnet' }, dir);
+  // mark all files done so the in-progress guard passes, then the model lock check runs
+  await handleMarkDone({ file: 'a.js', status: 'done' }, dir);
+  // attempt to reinitialize with a different model — should throw model lock error
+  await expect(handleListFiles({ glob: '**/*.js', model: 'opus' }, dir)).rejects.toThrow('locked');
+});
+
+test('handleListFiles allows same model on re-init after run completes', async () => {
+  touch('a.js');
+  await handleListFiles({ glob: '**/*.js', model: 'sonnet' }, dir);
+  await handleMarkDone({ file: 'a.js', status: 'done' }, dir);
+  // all done — re-init with same model should succeed
+  await expect(handleListFiles({ glob: '**/*.js', model: 'sonnet' }, dir)).resolves.toBeDefined();
+});

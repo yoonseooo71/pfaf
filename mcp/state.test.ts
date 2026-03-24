@@ -105,3 +105,29 @@ test('getFolderContents returns empty array for unknown folder', () => {
   initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
   expect(getFolderContents(statePath, 'nonexistent')).toEqual([]);
 });
+
+// model tests
+
+test('initState stores model when provided', () => {
+  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'], model: 'haiku' });
+  const state = readState(statePath);
+  expect(state!.model).toBe('haiku');
+});
+
+test('initState omits model field when not provided', () => {
+  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const state = readState(statePath);
+  expect(state!.model).toBeUndefined();
+});
+
+test('getProgress returns model when set', () => {
+  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'], model: 'opus' });
+  const p = getProgress(statePath);
+  expect(p.model).toBe('opus');
+});
+
+test('getProgress omits model when not set', () => {
+  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const p = getProgress(statePath);
+  expect(p.model).toBeUndefined();
+});
