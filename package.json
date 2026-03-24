@@ -1,11 +1,18 @@
 {
-  "name": "pfaf",
+  "name": "@yoonseooo71/pfaf",
   "version": "1.0.0",
   "description": "Prompt For All Files — run any prompt on every file without skipping",
   "type": "module",
   "main": "dist/server.js",
+  "bin": {
+    "pfaf": "dist/server.js"
+  },
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
     "start": "node dist/server.js"
   },
