@@ -1,7 +1,8 @@
-import { discoverFiles } from './files.js';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
 import { tmpdir } from 'os';
+import { dirname, join } from 'path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
+
+import { discoverFiles } from './files.js';
 
 let dir: string;
 

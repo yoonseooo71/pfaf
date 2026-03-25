@@ -68,12 +68,12 @@ export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [],
   }
 
   const files: FileEntry[] = [];
-  for (const f of rawFiles) {
-    if (ig.ignores(f)) continue;
-    if (isBinary(f)) continue;
+  for (const file of rawFiles) {
+    if (ig.ignores(file)) continue;
+    if (isBinary(file)) continue;
 
-    const fullPath = join(cwd, f);
-    const entry: FileEntry = { path: f };
+    const fullPath = join(cwd, file);
+    const entry: FileEntry = { path: file };
 
     try {
       const lines = countLines(fullPath);
@@ -81,7 +81,6 @@ export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [],
         entry.warning = `File has ${lines} lines (>500). Processing may degrade quality.`;
       }
     } catch {
-      // unreadable file — skip silently
       continue;
     }
 
@@ -94,8 +93,7 @@ export function discoverFiles({ cwd, glob = '**/*', ignore: ignorePatterns = [],
 // --- Helpers ---
 
 function loadGitignore(cwd: string): Ignore {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const ig = (ignore as any)() as Ignore;
+  const ig = ignore() as unknown as Ignore;
   const gitignorePath = join(cwd, '.gitignore');
   if (existsSync(gitignorePath)) {
     ig.add(readFileSync(gitignorePath, 'utf8'));

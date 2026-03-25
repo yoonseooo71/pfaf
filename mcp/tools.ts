@@ -1,6 +1,16 @@
 import { join, dirname } from 'path';
 import { discoverFiles, getChangedFiles } from './files.js';
-import { readState, initState, getNextFile, getGroupBy, getFolderContents, markDone, getProgress, getFailures, resetState } from './state.js';
+import {
+  readState,
+  initState,
+  getNextFile,
+  getGroupBy,
+  getFolderContents,
+  markDone,
+  getProgress,
+  getFailures,
+  resetState,
+} from './state.js';
 import type { FailureEntry, FileStatus } from './state.js';
 
 // --- Types ---
@@ -51,7 +61,18 @@ interface ResetArgs {
 // --- Public functions ---
 
 export async function handleListFiles(
-  { glob = '**/*', ignore = [], prompt = '', mode = 'sequential', group_by = 'file', batch_size, model, dry_run = false, changed_only = false, include_only = [] }: ListFilesArgs,
+  {
+    glob = '**/*',
+    ignore = [],
+    prompt = '',
+    mode = 'sequential',
+    group_by = 'file',
+    batch_size,
+    model,
+    dry_run = false,
+    changed_only = false,
+    include_only = [],
+  }: ListFilesArgs,
   cwd: string
 ): Promise<ListFilesResult> {
   let { files } = discoverFiles({ cwd, glob, ignore, includeOnly: include_only });

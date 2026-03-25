@@ -60,16 +60,17 @@ export function writeState(statePath: string, state: RunState): void {
 }
 
 export function initState(statePath: string, opts: InitStateOptions): void {
+  const pendingStatus: FileStatus = 'pending';
   const state: RunState = {
     prompt: opts.prompt,
     mode: opts.mode,
     glob: opts.glob,
     groupBy: opts.groupBy,
     batchSize: opts.batchSize ?? 5,
-    ...(opts.model ? { model: opts.model } : {}),
+    ...(opts.model && { model: opts.model }),
     startedAt: new Date().toISOString(),
-    files: Object.fromEntries(opts.files.map(f => [f, 'pending' as FileStatus])),
-    ...(opts.folderContents ? { folderContents: opts.folderContents } : {}),
+    files: Object.fromEntries(opts.files.map(f => [f, pendingStatus])),
+    ...(opts.folderContents && { folderContents: opts.folderContents }),
   };
   writeState(statePath, state);
 }
@@ -110,18 +111,23 @@ export function getFolderContents(statePath: string, folder: string): string[] {
 export function getProgress(statePath: string): Progress {
   const state = readState(statePath);
   if (!state) return { done: 0, pending: 0, failed: 0, total: 0, batchSize: 5, bar: '' };
+
   const counts = Object.values(state.files).reduce<Record<FileStatus, number>>(
-    (acc, s) => { acc[s] = (acc[s] || 0) + 1; return acc; },
+    (acc, s) => {
+      acc[s] = (acc[s] || 0) + 1;
+      return acc;
+    },
     { pending: 0, done: 0, failed: 0 }
   );
   const total = Object.keys(state.files).length;
+
   return {
     done: counts.done,
     pending: counts.pending,
     failed: counts.failed,
     total,
     batchSize: state.batchSize,
-    ...(state.model ? { model: state.model } : {}),
+    ...(state.model && { model: state.model }),
     bar: renderBar(counts.done, counts.failed, total),
   };
 }
@@ -141,12 +147,12 @@ export function resetState(statePath: string, force: boolean = false): void {
 
 function renderBar(done: number, failed: number, total: number): string {
   if (total === 0) return '';
+
   const WIDTH = 20;
   const processed = done + failed;
-  const filledDone = Math.round((done / total) * WIDTH);
-  const filledFailed = Math.round((failed / total) * WIDTH);
-  const filled = filledDone + filledFailed;
+  const filled = Math.round(((done + failed) / total) * WIDTH);
   const pct = Math.round((processed / total) * 100);
   const bar = '█'.repeat(filled) + '░'.repeat(Math.max(0, WIDTH - filled));
+
   return `[${bar}] ${processed}/${total} (${pct}%)`;
 }

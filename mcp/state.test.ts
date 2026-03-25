@@ -16,7 +16,14 @@ afterEach(() => {
 });
 
 test('initState creates state file with all files as pending', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js', 'b.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js', 'b.js'],
+  };
+  initState(statePath, config);
   const state = readState(statePath);
   expect(state!.files['a.js']).toBe('pending');
   expect(state!.files['b.js']).toBe('pending');
@@ -24,25 +31,53 @@ test('initState creates state file with all files as pending', () => {
 });
 
 test('getNextFile returns first pending file', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js', 'b.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js', 'b.js'],
+  };
+  initState(statePath, config);
   expect(getNextFile(statePath)).toBe('a.js');
 });
 
 test('getNextFile returns null when all files done', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+  };
+  initState(statePath, config);
   markDone(statePath, 'a.js', 'done');
   expect(getNextFile(statePath)).toBeNull();
 });
 
 test('getNextFile with retry_failed returns failed files', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js', 'b.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js', 'b.js'],
+  };
+  initState(statePath, config);
   markDone(statePath, 'a.js', 'failed');
   markDone(statePath, 'b.js', 'done');
   expect(getNextFile(statePath, true)).toBe('a.js');
 });
 
 test('getProgress returns correct counts', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js', 'b.js', 'c.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js', 'b.js', 'c.js'],
+  };
+  initState(statePath, config);
   markDone(statePath, 'a.js', 'done');
   markDone(statePath, 'b.js', 'failed');
   const p = getProgress(statePath);
@@ -55,22 +90,44 @@ test('getProgress returns correct counts', () => {
 });
 
 test('resetState with force=true clears the file', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+  };
+  initState(statePath, config);
   resetState(statePath, true);
   expect(existsSync(statePath)).toBe(false);
 });
 
 test('resetState with force=false throws if in-progress', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js', 'b.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js', 'b.js'],
+  };
+  initState(statePath, config);
   expect(() => resetState(statePath, false)).toThrow('in-progress');
 });
 
 test('initState with groupBy=folder stores folderContents', () => {
-  const folderContents = { src: ['src/a.ts', 'src/b.ts'], lib: ['lib/c.ts'] };
-  initState(statePath, {
-    prompt: 'test', mode: 'sequential', glob: '**/*.ts',
-    groupBy: 'folder', files: ['src', 'lib'], folderContents,
-  });
+  const folderContents = {
+    src: ['src/a.ts', 'src/b.ts'],
+    lib: ['lib/c.ts'],
+  };
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.ts',
+    groupBy: 'folder' as const,
+    files: ['src', 'lib'],
+    folderContents,
+  };
+  initState(statePath, config);
   const state = readState(statePath);
   expect(state!.groupBy).toBe('folder');
   expect(state!.files['src']).toBe('pending');
@@ -79,55 +136,107 @@ test('initState with groupBy=folder stores folderContents', () => {
 });
 
 test('getGroupBy returns file by default', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+  };
+  initState(statePath, config);
   expect(getGroupBy(statePath)).toBe('file');
 });
 
 test('getGroupBy returns folder when set', () => {
-  initState(statePath, {
-    prompt: 'test', mode: 'sequential', glob: '**/*.ts',
-    groupBy: 'folder', files: ['src'],
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.ts',
+    groupBy: 'folder' as const,
+    files: ['src'],
     folderContents: { src: ['src/a.ts'] },
-  });
+  };
+  initState(statePath, config);
   expect(getGroupBy(statePath)).toBe('folder');
 });
 
 test('getFolderContents returns files for a folder', () => {
-  initState(statePath, {
-    prompt: 'test', mode: 'sequential', glob: '**/*.ts',
-    groupBy: 'folder', files: ['src'],
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.ts',
+    groupBy: 'folder' as const,
+    files: ['src'],
     folderContents: { src: ['src/a.ts', 'src/b.ts'] },
-  });
+  };
+  initState(statePath, config);
   expect(getFolderContents(statePath, 'src')).toEqual(['src/a.ts', 'src/b.ts']);
 });
 
 test('getFolderContents returns empty array for unknown folder', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+  };
+  initState(statePath, config);
   expect(getFolderContents(statePath, 'nonexistent')).toEqual([]);
 });
 
-// model tests
+// Model configuration tests
 
 test('initState stores model when provided', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'], model: 'haiku' });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+    model: 'haiku' as const,
+  };
+  initState(statePath, config);
   const state = readState(statePath);
   expect(state!.model).toBe('haiku');
 });
 
 test('initState omits model field when not provided', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+  };
+  initState(statePath, config);
   const state = readState(statePath);
   expect(state!.model).toBeUndefined();
 });
 
 test('getProgress returns model when set', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'], model: 'opus' });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+    model: 'opus' as const,
+  };
+  initState(statePath, config);
   const p = getProgress(statePath);
   expect(p.model).toBe('opus');
 });
 
 test('getProgress omits model when not set', () => {
-  initState(statePath, { prompt: 'test', mode: 'sequential', glob: '**/*.js', groupBy: 'file', files: ['a.js'] });
+  const config = {
+    prompt: 'test',
+    mode: 'sequential' as const,
+    glob: '**/*.js',
+    groupBy: 'file' as const,
+    files: ['a.js'],
+  };
+  initState(statePath, config);
   const p = getProgress(statePath);
   expect(p.model).toBeUndefined();
 });

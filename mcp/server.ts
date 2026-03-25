@@ -4,8 +4,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { handleListFiles, handleGetNextFile, handleMarkDone, handleGetProgress, handleGetFailures, handleReset } from './tools.js';
 
-// --- Server setup (order must be preserved) ---
-
+// Initialize working directory from environment or use process.cwd()
 const cwd: string = process.env.PFAF_CWD || process.cwd();
 
 const server = new Server(
@@ -94,18 +93,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-// --- Helpers ---
-
+// Helper function to dispatch tool calls based on name
 async function dispatchTool(name: string, args: Record<string, unknown>, cwd: string): Promise<unknown> {
-  // Cast through unknown to satisfy strict overlap checks — callers are responsible for providing valid args per tool schema
+  // Cast through unknown to satisfy strict overlap checks
+  // Callers are responsible for providing valid args per tool schema
   const a = args as unknown;
+
   switch (name) {
-    case 'list_files':    return handleListFiles(a as Parameters<typeof handleListFiles>[0], cwd);
-    case 'get_next_file': return handleGetNextFile(a as Parameters<typeof handleGetNextFile>[0], cwd);
-    case 'mark_done':     return handleMarkDone(a as Parameters<typeof handleMarkDone>[0], cwd);
-    case 'get_failures':  return handleGetFailures({}, cwd);
-    case 'get_progress':  return handleGetProgress({}, cwd);
-    case 'reset':         return handleReset(a as Parameters<typeof handleReset>[0], cwd);
-    default:              throw new Error(`Unknown tool: ${name}`);
+    case 'list_files':
+      return handleListFiles(a as Parameters<typeof handleListFiles>[0], cwd);
+    case 'get_next_file':
+      return handleGetNextFile(a as Parameters<typeof handleGetNextFile>[0], cwd);
+    case 'mark_done':
+      return handleMarkDone(a as Parameters<typeof handleMarkDone>[0], cwd);
+    case 'get_failures':
+      return handleGetFailures({}, cwd);
+    case 'get_progress':
+      return handleGetProgress({}, cwd);
+    case 'reset':
+      return handleReset(a as Parameters<typeof handleReset>[0], cwd);
+    default:
+      throw new Error(`Unknown tool: ${name}`);
   }
 }
